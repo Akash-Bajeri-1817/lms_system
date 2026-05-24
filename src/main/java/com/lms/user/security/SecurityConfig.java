@@ -32,8 +32,15 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)     // disable CSRF — we use JWT, not cookies
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()   // register + login are public
-                        .anyRequest().authenticated()                  // everything else needs a token
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/courses/published").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)  // no sessions — JWT only

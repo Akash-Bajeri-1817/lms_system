@@ -1,5 +1,6 @@
 package com.lms.exception;
 
+import com.lms.common.ApiResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import org.springframework.http.HttpStatus;
@@ -20,67 +21,61 @@ public class GlobalExceptionHandler {
 
     // handles wrong email or password
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(
+            BadCredentialsException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(
-                        401,
-                        "Invalid email or password",
-                        LocalDateTime.now()
-                ));
+                .body(ApiResponse.error("Invalid email or password"));
     }
 
     // handles disabled/banned accounts
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleDisabled(
+            DisabledException ex) {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse(
-                        403,
-                        "Your account has been disabled",
-                        LocalDateTime.now()
-                ));
+                .body(ApiResponse.error("Your account has been disabled"));
     }
 
     // handles @NotBlank, @Email, @Size validation failures
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationErrors(
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(
             MethodArgumentNotValidException ex) {
 
         Map<String, String> errors = new HashMap<>();
-
-        // loop through all failed fields and collect their error messages
         ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
+            String field = ((FieldError) error).getField();
             String message = error.getDefaultMessage();
-            errors.put(fieldName, message);
+            errors.put(field, message);
         });
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.<Map<String, String>>builder()
+                        .success(false)
+                        .message("Validation failed")
+                        .data(errors)
+                        .timestamp(LocalDateTime.now())
+                        .build()
+                );
     }
 
     // handles duplicate email registration
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleRuntime(
+            RuntimeException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(
-                        400,
-                        ex.getMessage(),
-                        LocalDateTime.now()
-                ));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     // handles expired JWT tokens
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ErrorResponse> handleExpiredJwt(ExpiredJwtException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleExpiredJwt(
+            ExpiredJwtException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse(
-                        401,
-                        "Token has expired — please login again",
-                        LocalDateTime.now()
-                ));
+                .body(ApiResponse.error("Token has expired — please login again"));
     }
 
     // handles tampered/invalid JWT tokens

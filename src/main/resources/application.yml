@@ -34,3 +34,10 @@ application:
       secret-key: 3f8a9b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
       access-token-expiration: 900000        # 15 minutes in ms
       refresh-token-expiration: 604800000    # 7 days in ms
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    tags-sorter: alpha

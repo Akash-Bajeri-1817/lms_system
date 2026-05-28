@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,6 +34,13 @@ public class EnrollmentService {
 
         var course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        // if course has a price, student must pay first
+        if (course.getPrice().compareTo(BigDecimal.ZERO) > 0) {
+            throw new RuntimeException(
+                    "This is a paid course. Please complete payment first."
+            );
+        }
 
         // only allow enrollment in published courses
         if (course.getStatus() != CourseStatus.PUBLISHED) {

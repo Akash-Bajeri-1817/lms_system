@@ -41,3 +41,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui
     tags-sorter: alpha
+
+razorpay:
+  key-id: rzp_test_SuQJvcU5v8A9Fy
+  key-secret: Lo8Cau0BFPZRHH5SVRc5vGyo
+  currency: INR

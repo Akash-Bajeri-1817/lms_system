@@ -6,6 +6,8 @@ import com.lms.enrollment.dto.EnrollmentResponse;
 import com.lms.enrollment.entity.Enrollment;
 import com.lms.enrollment.entity.EnrollmentStatus;
 import com.lms.enrollment.repository.EnrollmentRepository;
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,8 @@ public class EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
 
     public EnrollmentResponse enroll(Long courseId) {
 
@@ -60,6 +64,16 @@ public class EnrollmentService {
                 .build();
 
         var saved = enrollmentRepository.save(enrollment);
+        emailService.sendEmail(
+                student.getEmail(),
+                "Enrolled: " + course.getTitle(),
+                templateService.enrollmentEmail(
+                        student.getFirstName(),
+                        course.getTitle(),
+                        course.getInstructor().getFirstName() + " " +
+                                course.getInstructor().getLastName()
+                )
+        );
         return mapToResponse(saved);
     }
 

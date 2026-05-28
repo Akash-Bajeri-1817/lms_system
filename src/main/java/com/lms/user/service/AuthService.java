@@ -1,5 +1,7 @@
 package com.lms.user.service;
 
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.user.dto.AuthResponse;
 import com.lms.user.dto.LoginRequest;
 import com.lms.user.dto.RegisterRequest;
@@ -21,8 +23,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
+
 
     public AuthResponse register(RegisterRequest request) {
+
 
         // 1. check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -45,12 +51,20 @@ public class AuthService {
         // 4. generate JWT token
         var token = jwtService.generateToken(user);
 
+        // send welcome email after saving user
+        emailService.sendEmail(
+                user.getEmail(),
+                "Welcome to LMS Platform! 🎉",
+                templateService.welcomeEmail(user.getFirstName())
+        );
+
         // 5. return token + user info
         return AuthResponse.builder()
                 .accessToken(token)
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .build();
+
     }
 
     public AuthResponse login(LoginRequest request) {

@@ -3,6 +3,8 @@ package com.lms.payment.service;
 import com.lms.enrollment.entity.Enrollment;
 import com.lms.enrollment.entity.EnrollmentStatus;
 import com.lms.enrollment.repository.EnrollmentRepository;
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.payment.dto.*;
 import com.lms.payment.entity.Payment;
 import com.lms.payment.entity.PaymentStatus;
@@ -35,6 +37,9 @@ public class PaymentService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
+
 
     @Value("${razorpay.key-id}")
     private String keyId;
@@ -185,6 +190,18 @@ public class PaymentService {
                         + "course: {}",
                 payment.getStudent().getEmail(),
                 payment.getCourse().getTitle());
+
+        emailService.sendEmail(
+                payment.getStudent().getEmail(),
+                "Payment Successful — " + payment.getCourse().getTitle(),
+                templateService.paymentSuccessEmail(
+                        payment.getStudent().getFirstName(),
+                        payment.getCourse().getTitle(),
+                        payment.getAmount().toString(),
+                        payment.getRazorpayOrderId()
+                )
+        );
+
 
         return mapToResponse(payment);
     }

@@ -20,6 +20,19 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: akashbajeri18@gmail.com
+    password: jadd kqxm vwbv pbor
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 server:
   port: 8080
 
@@ -28,12 +41,15 @@ logging:
     com.lms: DEBUG                # see all your own code's logs
     org.springframework.security: DEBUG   # see security decisions
 
-application:
+application:                      # Root application key
   security:
     jwt:
       secret-key: 3f8a9b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
       access-token-expiration: 900000        # 15 minutes in ms
       refresh-token-expiration: 604800000    # 7 days in ms
+  mail:                           #  Fixed: Moved under 'application'
+    from: akashbajeri18@gmail.com
+    from-name: LMS Platform
 
 springdoc:
   api-docs:

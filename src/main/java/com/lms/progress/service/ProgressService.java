@@ -2,6 +2,8 @@ package com.lms.progress.service;
 
 import com.lms.course.repository.LessonRepository;
 import com.lms.course.repository.ModuleRepository;
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.progress.dto.*;
 import com.lms.progress.entity.Certificate;
 import com.lms.progress.entity.LessonProgress;
@@ -31,6 +33,9 @@ public class ProgressService {
     private final CourseRepository courseRepository;
     private final LessonRepository lessonRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
+
 
     // student marks a lesson as watched / completed
     @Transactional
@@ -190,6 +195,15 @@ public class ProgressService {
                     .build();
 
             certificateRepository.save(certificate);
+            emailService.sendEmail(
+                    student.getEmail(),
+                    "Certificate Earned — " + course.getTitle() + " 🎓",
+                    templateService.certificateEmail(
+                            student.getFirstName(),
+                            course.getTitle(),
+                            certificate.getCertificateNumber()
+                    )
+            );
 
             log.info("Certificate {} issued to {} for course {}",
                     certNumber, student.getEmail(), course.getTitle());

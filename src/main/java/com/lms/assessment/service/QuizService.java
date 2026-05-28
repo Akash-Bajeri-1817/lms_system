@@ -5,6 +5,8 @@ import com.lms.assessment.entity.*;
 import com.lms.assessment.repository.QuizRepository;
 import com.lms.assessment.repository.SubmissionRepository;
 import com.lms.course.repository.CourseRepository;
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +28,8 @@ public class QuizService {
     private final SubmissionRepository submissionRepository;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
 
     // INSTRUCTOR creates a quiz with questions and options in one request
     @Transactional
@@ -214,6 +218,18 @@ public class QuizService {
         submission.setAnswers(submissionAnswers);
 
         var saved = submissionRepository.save(submission);
+        emailService.sendEmail(
+                student.getEmail(),
+                "Quiz Result: " + quiz.getTitle(),
+                templateService.quizResultEmail(
+                        student.getFirstName(),
+                        quiz.getTitle(),
+                        saved.getScore(),
+                        saved.getTotalMarks(),
+                        saved.getPercentage().toString(),
+                        saved.isPassed()
+                )
+        );
         return mapToSubmissionResponse(saved);
     }
 

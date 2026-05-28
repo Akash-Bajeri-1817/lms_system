@@ -6,6 +6,8 @@ import com.lms.instructor.dto.ReviewRequest;
 import com.lms.instructor.entity.ApplicationStatus;
 import com.lms.instructor.entity.InstructorApplication;
 import com.lms.instructor.repository.InstructorApplicationRepository;
+import com.lms.notification.service.EmailService;
+import com.lms.notification.service.EmailTemplateService;
 import com.lms.user.entity.Role;
 import com.lms.user.entity.User;
 import com.lms.user.repository.UserRepository;
@@ -23,6 +25,8 @@ public class InstructorApplicationService {
 
     private final InstructorApplicationRepository applicationRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService templateService;
 
     // STUDENT submits an application
     public ApplicationResponse apply(ApplicationRequest request) {
@@ -125,6 +129,26 @@ public class InstructorApplicationService {
             applicant.setRole(Role.INSTRUCTOR);
             userRepository.save(applicant);   // save role change
         }
+
+        if (request.getDecision() == ApplicationStatus.APPROVED) {
+            emailService.sendEmail(
+                    application.getApplicant().getEmail(),
+                    "Your Instructor Application is Approved! 🎉",
+                    templateService.instructorApprovedEmail(
+                            application.getApplicant().getFirstName()
+                    )
+            );
+        } else {
+            emailService.sendEmail(
+                    application.getApplicant().getEmail(),
+                    "Instructor Application Update",
+                    templateService.instructorRejectedEmail(
+                            application.getApplicant().getFirstName(),
+                            request.getRejectionReason()
+                    )
+            );
+        }
+
 
         return mapToResponse(applicationRepository.save(application));
     }

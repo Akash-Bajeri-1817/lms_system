@@ -8,6 +8,7 @@ import com.lms.enrollment.entity.EnrollmentStatus;
 import com.lms.enrollment.repository.EnrollmentRepository;
 import com.lms.notification.service.EmailService;
 import com.lms.notification.service.EmailTemplateService;
+import com.lms.search.service.SearchService;
 import com.lms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +27,8 @@ public class EnrollmentService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final EmailTemplateService templateService;
+    private final SearchService searchService;
+
 
     public EnrollmentResponse enroll(Long courseId) {
 
@@ -56,6 +59,7 @@ public class EnrollmentService {
                 student.getId(), courseId)) {
             throw new RuntimeException("You are already enrolled in this course");
         }
+        searchService.updateStudentCount(courseId, 1);
 
         var enrollment = Enrollment.builder()
                 .student(student)

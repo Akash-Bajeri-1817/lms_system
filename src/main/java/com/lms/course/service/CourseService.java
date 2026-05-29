@@ -7,6 +7,7 @@ import com.lms.course.dto.CourseResponse;
 import com.lms.course.entity.Course;
 import com.lms.course.entity.CourseStatus;
 import com.lms.course.repository.CourseRepository;
+import com.lms.search.service.SearchService;
 import com.lms.user.entity.User;
 import com.lms.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class CourseService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final SanitizationUtil sanitizer;
+    private final SearchService searchService;
 
     public CourseResponse createCourse(CourseRequest request) {
 
@@ -79,6 +81,9 @@ public class CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
         courseRepository.delete(course);
+
+        // remove from Elasticsearch
+        searchService.removeCourse(id);
     }
 
     // converts "Intro to Java" → "intro-to-java"
@@ -116,6 +121,11 @@ public class CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
         course.setStatus(CourseStatus.PUBLISHED);
-        return mapToResponse(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+
+        // index in Elasticsearch when published
+        searchService.indexCourse(saved);
+
+        return mapToResponse(saved);
     }
 }

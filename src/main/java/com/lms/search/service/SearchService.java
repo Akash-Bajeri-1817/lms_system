@@ -235,4 +235,13 @@ public class SearchService {
                     );
         };
     }
+
+    // update average rating when a review is added/updated/deleted
+    public void updateCourseRating(Long courseId, Double averageRating) {
+        searchRepository.findByCourseId(courseId).ifPresent(doc -> {
+            doc.setAverageRating(averageRating);
+            searchRepository.save(doc);
+            log.info("Updated rating for course {}: {}", courseId, averageRating);
+        });
+    }
 }

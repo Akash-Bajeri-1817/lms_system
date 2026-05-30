@@ -1,0 +1,5 @@
+ALTER TABLE lessons
+    ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(500);
+
+ALTER TABLE courses
+    ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(500);

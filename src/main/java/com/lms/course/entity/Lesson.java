@@ -36,6 +36,9 @@ public class Lesson {
     @Column(name = "content_url")
     private String contentUrl;
 
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private LessonType type;

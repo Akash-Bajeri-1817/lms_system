@@ -52,7 +52,7 @@ application:                      # Root application key
       secret-key: 3f8a9b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0
       access-token-expiration: 900000        # 15 minutes in ms
       refresh-token-expiration: 604800000    # 7 days in ms
-  mail:                           #  Fixed: Moved under 'application'
+  mail:
     from: akashbajeri18@gmail.com
     from-name: LMS Platform
 
@@ -67,3 +67,12 @@ razorpay:
   key-id: rzp_test_SuQJvcU5v8A9Fy
   key-secret: Lo8Cau0BFPZRHH5SVRc5vGyo
   currency: INR
+
+aws:
+  s3:
+    endpoint: http://localhost:4566    # LocalStack endpoint
+    region: us-east-1
+    bucket-name: lms-media-bucket
+    access-key: test                   # LocalStack accepts any value
+    secret-key: test                   # LocalStack accepts any value
+    presigned-url-expiry: 60           # in seconds

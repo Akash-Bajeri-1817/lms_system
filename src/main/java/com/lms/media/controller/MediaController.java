@@ -1,6 +1,7 @@
 package com.lms.media.controller;
 
 import com.lms.common.ApiResponse;
+import com.lms.course.repository.LessonRepository;
 import com.lms.media.service.MediaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class MediaController {
 
     private final MediaService mediaService;
+    private final LessonRepository lessonRepository;
 
     @Operation(summary = "Upload course thumbnail")
     @PostMapping(
@@ -87,6 +89,39 @@ public class MediaController {
                         Map.of("url", url),
                         "Access URL generated — expires in "
                                 + "60 minutes"
+                )
+        );
+    }
+
+    @Operation(summary = "Get HLS streaming URL for a lesson video")
+    @GetMapping("/lessons/{lessonId}/stream")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getStreamUrl(
+            @PathVariable Long lessonId) {
+
+        var lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() ->
+                        new RuntimeException("Lesson not found")
+                );
+
+        if (lesson.getContentUrl() == null) {
+            throw new RuntimeException(
+                    "Video not yet available — transcoding may still be in progress"
+            );
+        }
+
+        // generate presigned URL for master playlist
+        String streamUrl = mediaService
+                .generatePresignedUrl(lesson.getContentUrl());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        Map.of(
+                                "streamUrl", streamUrl,
+                                "format", "HLS",
+                                "note", "Use a HLS-compatible player like Video.js or hls.js"
+                        ),
+                        "Stream URL generated"
                 )
         );
     }

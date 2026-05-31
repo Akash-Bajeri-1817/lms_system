@@ -16,6 +16,53 @@ services:
       - lms-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped   # add this line
 
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    container_name: lms-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+
+  localstack:
+      image: localstack/localstack
+      container_name: localstack
+      ports:
+        - "4566:4566"
+      environment:
+        - LOCALSTACK_AUTH_TOKEN=ls-vEQeQaBI-PuPu-WuKU-PoGi-3508967389c2
+        - SERVICES=s3
+        - DEFAULT_REGION=us-east-1
+      restart: unless-stopped
+
+  zookeeper:
+      image: confluentinc/cp-zookeeper:7.6.0
+      container_name: lms-zookeeper
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+      ports:
+        - "2181:2181"
+      restart: unless-stopped
+
+  kafka:
+      image: confluentinc/cp-kafka:7.6.0
+      container_name: lms-kafka
+      depends_on:
+        - zookeeper
+      environment:
+        KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      ports:
+        - "9092:9092"
+      restart: unless-stopped
+
 volumes:
-  lms-postgres-data:
+    lms-postgres-data:
+
 

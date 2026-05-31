@@ -1,5 +1,6 @@
 package com.lms.media.service;
 
+import com.lms.media.producer.VideoEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class MediaService {
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final VideoEventProducer videoEventProducer;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -64,9 +66,20 @@ public class MediaService {
     public String uploadVideo(Long lessonId,
                               MultipartFile file) throws IOException {
         validateFile(file, ALLOWED_VIDEO_TYPES, MAX_VIDEO_SIZE);
-        String key = "videos/lesson-" + lessonId + "/"
+        String key = "videos/raw/lesson-" + lessonId + "/"
                 + UUID.randomUUID() + getExtension(file);
-        return uploadToS3(key, file);
+        uploadToS3(key, file);
+
+        // publish Kafka event — triggers transcoding worker
+        videoEventProducer.publishVideoUploaded(
+                lessonId,
+                key,
+                file.getOriginalFilename()
+        );
+
+        log.info("Video uploaded and transcoding event published " +
+                "for lesson: {}", lessonId);
+        return key;
     }
 
     // upload lesson attachment (PDF, slides)

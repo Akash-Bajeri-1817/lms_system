@@ -1,0 +1,2 @@
+ALTER TABLE certificates
+    ADD COLUMN IF NOT EXISTS pdf_key VARCHAR(500);

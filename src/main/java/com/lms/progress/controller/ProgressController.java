@@ -1,7 +1,10 @@
 package com.lms.progress.controller;
 
 import com.lms.common.ApiResponse;
+import com.lms.media.service.MediaService;
 import com.lms.progress.dto.*;
+import com.lms.progress.entity.Certificate;
+import com.lms.progress.service.CertificatePdfService;
 import com.lms.progress.service.ProgressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/progress")
@@ -19,6 +23,8 @@ import java.util.List;
 public class ProgressController {
 
     private final ProgressService progressService;
+    private final CertificatePdfService certificatePdfService;
+    private final MediaService mediaService;
 
     @Operation(summary = "Mark a lesson as watched or completed")
     @PostMapping("/lessons/{lessonId}")
@@ -67,4 +73,22 @@ public class ProgressController {
                 )
         );
     }
+
+    @Operation(summary = "Download certificate PDF")
+    @GetMapping("/certificates/{certificateNumber}/download")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Map<String, String>>>
+    downloadCertificate(
+            @PathVariable String certificateNumber) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        progressService.getCertificateDownloadUrl(
+                                certificateNumber
+                        ),
+                        "Certificate download URL generated"
+                )
+        );
+    }
+
+
 }

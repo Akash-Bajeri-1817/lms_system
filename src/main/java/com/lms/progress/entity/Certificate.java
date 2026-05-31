@@ -37,4 +37,7 @@ public class Certificate {
     @CreationTimestamp
     @Column(name = "issued_at", updatable = false)
     private LocalDateTime issuedAt;
+
+    @Column(name = "pdf_key")
+    private String pdfKey;
 }

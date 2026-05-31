@@ -2,6 +2,7 @@ package com.lms.progress.service;
 
 import com.lms.course.repository.LessonRepository;
 import com.lms.course.repository.ModuleRepository;
+import com.lms.media.service.MediaService;
 import com.lms.notification.service.EmailService;
 import com.lms.notification.service.EmailTemplateService;
 import com.lms.progress.dto.*;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -35,6 +37,9 @@ public class ProgressService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final EmailTemplateService templateService;
+    private final CertificatePdfService certificatePdfService;
+    private final MediaService mediaService;
+
 
 
     // student marks a lesson as watched / completed
@@ -168,24 +173,18 @@ public class ProgressService {
 
         long totalLessons = lessonRepository
                 .countLessonsByCourseId(courseId);
-
         long completedLessons = progressRepository
                 .countByStudentIdAndCourseIdAndCompleted(
                         studentId, courseId, true);
 
-        // only issue if ALL lessons completed and no certificate yet
         if (totalLessons > 0
                 && completedLessons >= totalLessons
                 && !certificateRepository
                 .existsByStudentIdAndCourseId(studentId, courseId)) {
 
-            var student = userRepository.findById(studentId)
-                    .orElseThrow();
-            var course = courseRepository.findById(courseId)
-                    .orElseThrow();
+            var student = userRepository.findById(studentId).orElseThrow();
+            var course  = courseRepository.findById(courseId).orElseThrow();
 
-            // generate unique certificate number
-            // format: LMS-2026-00042
             String certNumber = generateCertificateNumber();
 
             var certificate = Certificate.builder()
@@ -194,19 +193,34 @@ public class ProgressService {
                     .certificateNumber(certNumber)
                     .build();
 
-            certificateRepository.save(certificate);
+            Certificate saved = certificateRepository.save(certificate);
+
+            // generate PDF and upload to S3
+            try {
+                byte[] pdfBytes = certificatePdfService
+                        .generateCertificate(saved);
+                String pdfKey = mediaService.uploadCertificate(
+                        certNumber, pdfBytes);
+                saved.setPdfKey(pdfKey);    // store S3 key
+                certificateRepository.save(saved);
+
+                log.info("Certificate PDF uploaded: {}", pdfKey);
+            } catch (Exception e) {
+                log.error("Failed to generate certificate PDF: {}",
+                        e.getMessage());
+                // certificate record is still saved even if PDF fails
+            }
+
+            // send email with certificate number
             emailService.sendEmail(
                     student.getEmail(),
                     "Certificate Earned — " + course.getTitle() + " 🎓",
                     templateService.certificateEmail(
                             student.getFirstName(),
                             course.getTitle(),
-                            certificate.getCertificateNumber()
+                            certNumber
                     )
             );
-
-            log.info("Certificate {} issued to {} for course {}",
-                    certNumber, student.getEmail(), course.getTitle());
         }
     }
 
@@ -239,5 +253,26 @@ public class ProgressService {
                 .certificateNumber(c.getCertificateNumber())
                 .issuedAt(c.getIssuedAt())
                 .build();
+    }
+
+    public Map<String, String> getCertificateDownloadUrl(
+            String certificateNumber) {
+
+        Certificate cert = certificateRepository
+                .findByCertificateNumber(certificateNumber)
+                .orElseThrow(() ->
+                        new RuntimeException("Certificate not found")
+                );
+
+        if (cert.getPdfKey() == null) {
+            throw new RuntimeException(
+                    "Certificate PDF not yet generated"
+            );
+        }
+
+        String downloadUrl = mediaService
+                .generatePresignedUrl(cert.getPdfKey());
+
+        return Map.of("downloadUrl", downloadUrl);
     }
 }
